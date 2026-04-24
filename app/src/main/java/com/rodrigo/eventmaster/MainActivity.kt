@@ -29,8 +29,13 @@ import androidx.navigation.NavController
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rodrigo.eventmaster.screens.AddEventScreen
+import com.rodrigo.eventmaster.screens.EventDetailScreen
 import com.rodrigo.eventmaster.viewmodel.CategoryViewModel
 import com.rodrigo.eventmaster.viewmodel.EventViewModel
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 
 
 class MainActivity : ComponentActivity() {
@@ -40,13 +45,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             val viewModel: CategoryViewModel = viewModel()
             val eventViewModel: EventViewModel = viewModel()
+            val categoryViewModel: CategoryViewModel = viewModel()
             val navController = rememberNavController()
             EventMasterTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
 
                     NavHost(
                         navController = navController,
-                        startDestination = "home"
+                        startDestination = "home",
+                        modifier = Modifier.padding(innerPadding)
                     ) {
                         composable("home") {
                             HomeScreen(navController, viewModel, eventViewModel)
@@ -56,8 +63,20 @@ class MainActivity : ComponentActivity() {
                             AddCategoryScreen(navController, viewModel)
                         }
                         composable("addEvent") {
-                            AddEventScreen(navController, eventViewModel)
+                            AddEventScreen(navController, eventViewModel, categoryViewModel)
                         }
+
+                        composable(
+                            "eventDetail/{titulo}/{descripcion}/{categoria}"
+                        ) { backStackEntry ->
+
+                            val titulo = backStackEntry.arguments?.getString("titulo") ?: ""
+                            val descripcion = backStackEntry.arguments?.getString("descripcion") ?: ""
+                            val categoria = backStackEntry.arguments?.getString("categoria") ?: ""
+
+                            EventDetailScreen(titulo, descripcion, categoria)
+                        }
+
                     }
 
                 }
@@ -74,24 +93,32 @@ fun HomeScreen(
     categoryViewModel: CategoryViewModel,
     eventViewModel: EventViewModel
 ) {
-
+    var categoriaSeleccionada by remember { mutableStateOf<String?>(null) }
     val categorias = categoryViewModel.categorias
-    val eventos = eventViewModel.eventos
+    val eventos = eventViewModel.eventos.filter { evento -> categoriaSeleccionada == null || evento.categoria == categoriaSeleccionada }
+
 
     Column(
         modifier = Modifier.padding(16.dp)
     ) {
 
-        Text(text = "EventMaster")
+        Text(
+            text = "EventMaster",
+            style = MaterialTheme.typography.headlineMedium
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Categorías")
+        Text(
+            text = "Ingresar nuevo contenido",
+            style = MaterialTheme.typography.titleMedium
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             onClick = { navController.navigate("addCategory") },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Nueva Categoría")
@@ -101,6 +128,7 @@ fun HomeScreen(
 
         Button(
             onClick = { navController.navigate("addEvent") },
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Nuevo Evento")
@@ -108,10 +136,18 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        Text(
+            text = "Categorías",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         LazyColumn {
             items(categorias) { categoria ->
                 Button(
-                    onClick = { },
+                    onClick = { categoriaSeleccionada = categoria },
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(categoria)
@@ -123,9 +159,22 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Eventos")
+        Text(
+            text = "Eventos",
+            style = MaterialTheme.typography.titleMedium
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
+
+        if (categoriaSeleccionada != null) {
+            Text("Filtrando por: $categoriaSeleccionada")
+
+            Button(
+                onClick = { categoriaSeleccionada = null }
+            ) {
+                Text("Mostrar todos")
+            }
+        }
 
         LazyColumn {
             items(eventos) { evento ->
@@ -134,18 +183,31 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 8.dp)
+                        .clickable {
+                            navController.navigate(
+                                "eventDetail/${evento.titulo}/${evento.descripcion}/${evento.categoria}"
+                            )
+                        },
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
 
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
 
-                        Text(text = evento.titulo)
-
-                        Text(text = evento.descripcion)
-
-                        Text(text = evento.categoria)
-
+                        Text(
+                            text = evento.titulo,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = evento.descripcion,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "Categoría: ${evento.categoria}",
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                 }
             }
@@ -157,6 +219,7 @@ fun HomeScreen(
 fun AddCategoryScreen(navController: NavController, viewModel: CategoryViewModel) {
 
     var nombreCategoria by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier.padding(16.dp)
@@ -174,12 +237,22 @@ fun AddCategoryScreen(navController: NavController, viewModel: CategoryViewModel
             label = { Text("Nombre de la categoría") },
             modifier = Modifier.fillMaxWidth()
         )
+        if (error.isNotEmpty()) {
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
-                viewModel.agregarCategoria(nombreCategoria)
-                navController.popBackStack()
+                if (nombreCategoria.isBlank()) {
+                    error = "El nombre no puede estar vacío"
+                } else {
+                    viewModel.agregarCategoria(nombreCategoria)
+                    navController.popBackStack()
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {

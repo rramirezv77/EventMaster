@@ -7,17 +7,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rodrigo.eventmaster.model.Event
+import com.rodrigo.eventmaster.viewmodel.CategoryViewModel
 import com.rodrigo.eventmaster.viewmodel.EventViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEventScreen(
     navController: NavController,
-    eventViewModel: EventViewModel
+    eventViewModel: EventViewModel,
+    categoryViewModel: CategoryViewModel
 ) {
+    val categorias = categoryViewModel.categorias
 
+    var categoriaSeleccionada by remember { mutableStateOf("") }
     var titulo by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
-    var categoria by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.padding(16.dp)
@@ -33,7 +39,6 @@ fun AddEventScreen(
             label = { Text("Título") },
             modifier = Modifier.fillMaxWidth()
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
@@ -42,24 +47,57 @@ fun AddEventScreen(
             label = { Text("Descripción") },
             modifier = Modifier.fillMaxWidth()
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = categoria,
-            onValueChange = { categoria = it },
-            label = { Text("Categoría") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it }
+        ) {
+            OutlinedTextField(
+                value = categoriaSeleccionada,
+                onValueChange = {},
+                label = { Text("Categoría") },
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
+            )
 
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                categorias.forEach { categoria ->
+                    DropdownMenuItem(
+                        text = { Text(categoria) },
+                        onClick = {
+                            categoriaSeleccionada = categoria
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        if (error.isNotEmpty()) {
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
-                eventViewModel.agregarEvento(
-                    Event(titulo, descripcion, categoria)
-                )
-                navController.popBackStack()
+                if (titulo.isBlank() || descripcion.isBlank() || categoriaSeleccionada.isBlank()) {
+                    error = "Todos los campos son obligatorios"
+                } else {
+                    eventViewModel.agregarEvento(
+                        Event(titulo, descripcion, categoriaSeleccionada)
+                    )
+                    navController.popBackStack()
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
