@@ -1,7 +1,9 @@
 package com.rodrigo.eventmaster.model
 
-class Event (
-    val titulo: String,
-    val descripcion: String,
-    val categoria: String
-    )
+data class Event(
+    val id: Long = 0,
+    val title: String,
+    val description: String,
+    val categoryId: Long,
+    val categoryName: String
+)

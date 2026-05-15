@@ -1,5 +1,6 @@
 package com.rodrigo.eventmaster.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rodrigo.eventmaster.data.repository.EventMasterRepository
@@ -9,22 +10,17 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 @HiltViewModel
-class EventViewModel @Inject constructor(
-    private val repository: EventMasterRepository
+class EventDetailViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
+    repository: EventMasterRepository
 ) : ViewModel() {
+    private val eventId = savedStateHandle.get<String>("eventId")?.toLongOrNull() ?: 0L
 
-    val events: StateFlow<List<Event>> = repository.observeEvents().stateIn(
+    val event: StateFlow<Event?> = repository.observeEvent(eventId).stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = emptyList()
+        initialValue = null
     )
-
-    fun addEvent(title: String, description: String, categoryId: Long) {
-        viewModelScope.launch {
-            repository.addEvent(title, description, categoryId)
-        }
-    }
 }

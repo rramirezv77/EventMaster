@@ -1,3 +1,27 @@
 <resources>
-    <string name="app_name">EventMaster</string>
+    <string name="app_name">EventMaster 3</string>
+    <string name="home_title">EventMaster</string>
+    <string name="home_subtitle">Eventos persistentes por categoría</string>
+    <string name="new_category">Nueva categoría</string>
+    <string name="new_event">Nuevo evento</string>
+    <string name="categories">Categorías</string>
+    <string name="all">Todas</string>
+    <string name="events">Eventos</string>
+    <string name="empty_events">Aún no hay eventos registrados.</string>
+    <string name="empty_filtered_events">No hay eventos en esta categoría.</string>
+    <string name="category_name">Nombre de la categoría</string>
+    <string name="save">Guardar</string>
+    <string name="save_event">Guardar evento</string>
+    <string name="event_title">Título</string>
+    <string name="event_description">Descripción</string>
+    <string name="event_category">Categoría</string>
+    <string name="detail_title">Detalle del evento</string>
+    <string name="back">Volver</string>
+    <string name="title_required">El título es obligatorio.</string>
+    <string name="description_required">La descripción es obligatoria.</string>
+    <string name="category_required">Selecciona una categoría.</string>
+    <string name="category_required_name">El nombre no puede estar vacío.</string>
+    <string name="category_duplicate">La categoría ya existe.</string>
+    <string name="event_not_found">No se encontró el evento.</string>
+    <string name="create_category_first">Crea una categoría antes de registrar eventos.</string>
 </resources>
